@@ -418,6 +418,11 @@ static void osprd_setup(osprd_info_t *d)
 	osp_spin_lock_init(&d->mutex);
 	d->ticket_head = d->ticket_tail = 0;
 	/* Add code here if you add fields to osprd_info_t. */
+	d->readlock_num = 0;
+	d->writelock_num = 0;
+	d->write_pid = -1;
+	for (int k=0; k<1000; k++)
+	  d->read_pids[k] = -1;
 }
 
 
