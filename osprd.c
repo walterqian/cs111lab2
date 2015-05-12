@@ -300,7 +300,8 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 	    d->ticket_tail++;
 	    filp->f_flags |= F_OSPRD_LOCKED;
 	    //add process to our read pid list
-	    for (int i = 0; i < 1000; i++)
+	    int i = 0;
+	    for (i = 0; i < 1000; i++)
 	      {
 		if (d->read_pids[i] == -1){
 		  d->read_pids[i] = current->pid;
@@ -323,7 +324,7 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 		// Otherwise, if we can grant the lock request, return 0.
 
 		// Your code here (instead of the next two lines).
-	  if (filp_writeable){//try acquire write lock
+	  if (filp_writable){//try acquire write lock
 	    osp_spin_lock(&d->mutex);
 	    if (d->writelock_num == 0 && d->readlock_num == 0){//acquire writelock
 	      d->writelock_num = 1;
@@ -341,12 +342,13 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 	  else {//try acquire read lock
 	    osp_spin_lock(&d->mutex);
 	    if (d->writelock_num == 0){
-	      for (int i = 0; i < 1000; i++){
+	      int i =0; 
+	      for (i = 0; i < 1000; i++){
 		if (d->read_pids[i] == -1){
 		  d->readlock_num++;
 		  filp->f_flags |= F_OSPRD_LOCKED;
 		  d->ticket_tail++;
-		  d->read_pids[i] = current_pid;
+		  d->read_pids[i] = current->pid;
 		  osp_spin_unlock(&d->mutex);
 		  return 0;
 		}
@@ -373,22 +375,23 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 	  if (filp->f_flags & F_OSPRD_LOCKED){
 	    filp->f_flags ^= F_OSPRD_LOCKED;
 	    //lock
-	    osp_write_lock(&d->mutex);
+	    osp_spin_lock(&d->mutex);
 	    //release the process from read or write list
 	    if (writelock_num == current_pid){//process has writelock
-	      writelock_num = 0;
-	      write_pid = -1;
+	      d->writelock_num = 0;
+	      d->write_pid = -1;
 	    }
 	    else{ //process has readlock
-	      for (int i = 0; i < 1000; i++){
+	      int i =0;
+	      for (i = 0; i < 1000; i++){
 		if (d->read_pids[i] == current_pid){
 		  d->read_pids[i] = -1;
-		  d->read_num--;
+		  d->readlock_num--;
 		  break;
 		}
 	      }
 	    }
-	    osp_spin_unlock(d->mutex);
+	    osp_spin_unlock(&d->mutex);
 	    return 0;
 	  }
 	  else{
