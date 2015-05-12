@@ -179,7 +179,7 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 		  }
 		  else {//need to unlock readlock
 		    for (int i = 0; i < 1000; i++){
-		      if (d->read_pids[i] == current_pid){
+		      if (d->read_pids[i] == current->pid){
 			  d->read_pids[i] = -1;
 			  d->readlock_num--;
 			  osp_spin_unlock(&d->mutex);
@@ -216,7 +216,7 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 
 	// Set 'r' to the ioctl's return value: 0 on success, negative on error
 	//variables for ticket num
-	unsigned_int ticket;
+	unsigned ticket;
 	
 	if (cmd == OSPRDIOCACQUIRE) {
 
@@ -286,7 +286,7 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 	  }
 	  else{
 	    //acquire readlock. must wait for writelocks to be released
-	    r = wait_event_interruptible(dblockq, d->writelock_num == 0 && d->ticket_tail >= ticket);
+	    r = wait_event_interruptible(d->blockq, d->writelock_num == 0 && d->ticket_tail >= ticket);
 	    if (r == -ERESTARTSYS){
 	      if (ticket == d->ticket_tail)
 		d->ticket_tail++;
@@ -377,7 +377,7 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 	    //lock
 	    osp_spin_lock(&d->mutex);
 	    //release the process from read or write list
-	    if (writelock_num == current_pid){//process has writelock
+	    if (d->writelock_num == current->pid){//process has writelock
 	      d->writelock_num = 0;
 	      d->write_pid = -1;
 	    }
