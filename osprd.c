@@ -178,7 +178,8 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 		    wake_up_all(&d->blockq);
 		  }
 		  else {//need to unlock readlock
-		    for (int i = 0; i < 1000; i++){
+		    int i =0;
+		    for (i = 0; i < 1000; i++){
 		      if (d->read_pids[i] == current->pid){
 			  d->read_pids[i] = -1;
 			  d->readlock_num--;
@@ -384,7 +385,7 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 	    else{ //process has readlock
 	      int i =0;
 	      for (i = 0; i < 1000; i++){
-		if (d->read_pids[i] == current_pid){
+		if (d->read_pids[i] == current->pid){
 		  d->read_pids[i] = -1;
 		  d->readlock_num--;
 		  break;
