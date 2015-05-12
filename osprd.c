@@ -357,7 +357,9 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 	      return -EBUSY;
 	    }
 
-	  } else if (cmd == OSPRDIOCRELEASE) {
+	  }
+	}
+	else if (cmd == OSPRDIOCRELEASE) {
 
 		// EXERCISE: Unlock the ramdisk.
 		//
@@ -393,11 +395,11 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 	    return -EINVAL;
 	  }
 	  
-	} else
+	  } else
 		r = -ENOTTY; /* unknown command */
 	return r;
+	
 }
-
 
 // Initialize internal fields for an osprd_info_t.
 
