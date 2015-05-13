@@ -173,7 +173,7 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 		  osp_spin_lock(&d->mutex);
 		  filp->f_flags ^= F_OSPRD_LOCKED;
 
-		  if (d->writelock_num == 1){
+		  if (filp_writable){
 		    d->writelock_num = 0;
 		    d->write_pid = -1;
 		    osp_spin_unlock(&d->mutex);
@@ -187,6 +187,7 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 			  d->readlock_num--;
 			  osp_spin_unlock(&d->mutex);
 			  wake_up_all(&d->blockq);
+			  break; 
 		      }
 		    }
 		  }
@@ -259,6 +260,14 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 		// be protected by a spinlock; which ones?)
 
 		// Your code here (instead of the next two lines).
+	  // ehck from deadlock 
+	  int k =0;
+	  for (k=0; k<1000; k++){
+	    if (d->read_pids[k] == current->pid)
+	      return -EDEADLK;
+	  }
+	  if (current->pid == d->write_pid)
+	    return -EDEADLK;
 	  //lock ticket atomically
 	  osp_spin_lock(&d->mutex);
 	  ticket = d->ticket_head;
